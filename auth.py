@@ -61,12 +61,18 @@ def login(db: Session, username: str, password: str):
     if not security.verify_password(password, user.password):
         return None
 
+    print("USERNAME:", user.username)
+    print("EMAIL:", user.email)
+    print("ROLE:", user.role)
+
     token = security.create_access_token(
-    {
-        "sub": user.username,
-        "email": user.email,
-        "role": user.role
-    }
+        {
+            "sub": user.username,
+            "email": user.email,
+            "role": user.role
+        }
     )
+
+    print("TOKEN:", token)
 
     return token
