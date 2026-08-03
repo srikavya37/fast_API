@@ -25,15 +25,19 @@ def get_db():
 # Authentication APIs
 # -------------------------
 
-@app.post("/register")
-def register(user: schemas.UserCreate,
-             db: Session = Depends(get_db)):
+@app.post("/register", response_model=schemas.UserResponse)
+def register(
+    user: schemas.UserCreate,
+    db: Session = Depends(get_db)
+):
     return auth.register(db, user)
 
 
-@app.post("/login")
-def login(user: schemas.UserLogin,
-          db: Session = Depends(get_db)):
+@app.post("/login", response_model=schemas.Token)
+def login(
+    user: schemas.UserLogin,
+    db: Session = Depends(get_db)
+):
 
     token = auth.login(
         db,
@@ -118,7 +122,6 @@ def delete(
     user=Depends(get_current_user)
 ):
 
-    # Only admin can delete
     if user["role"] != "admin":
         raise HTTPException(
             status_code=403,
