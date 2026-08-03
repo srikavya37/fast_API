@@ -5,7 +5,34 @@ import schemas
 import security
 
 
+from fastapi import HTTPException
+from sqlalchemy.orm import Session
+import models
+import schemas
+import security
+
+
 def register(db: Session, user: schemas.UserCreate):
+
+    existing_user = db.query(models.User).filter(
+        models.User.username == user.username
+    ).first()
+
+    if existing_user:
+        raise HTTPException(
+            status_code=400,
+            detail="Username already exists"
+        )
+
+    existing_email = db.query(models.User).filter(
+        models.User.email == user.email
+    ).first()
+
+    if existing_email:
+        raise HTTPException(
+            status_code=400,
+            detail="Email already exists"
+        )
 
     hashed = security.hash_password(user.password)
 
@@ -18,6 +45,7 @@ def register(db: Session, user: schemas.UserCreate):
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
+
     return db_user
 
 
