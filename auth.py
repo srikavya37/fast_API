@@ -62,10 +62,11 @@ def login(db: Session, username: str, password: str):
         return None
 
     token = security.create_access_token(
-        {
-            "sub": user.username,
-            "role": user.role
-        }
+    {
+        "sub": user.username,
+        "email": user.email,
+        "role": user.role
+    }
     )
 
     return token
