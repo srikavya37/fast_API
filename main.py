@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 import crud
@@ -33,7 +34,7 @@ def register(
     return auth.register(db, user)
 
 
-@app.post("/login", response_model=schemas.Token)
+@app.post("/login")
 def login(
     user: schemas.UserLogin,
     db: Session = Depends(get_db)
@@ -51,10 +52,22 @@ def login(
             detail="Invalid Credentials"
         )
 
-    return {
-        "access_token": token,
-        "token_type": "bearer"
-    }
+    response = JSONResponse(
+        content={
+            "message": "Login Successful"
+        }
+    )
+
+    response.set_cookie(
+        key="access_token",
+        value=token,
+        httponly=True,
+        max_age=3600,
+        secure=False,      # Change to True when using HTTPS in production
+        samesite="Lax"
+    )
+
+    return response
 
 
 # -------------------------

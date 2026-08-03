@@ -1,17 +1,22 @@
-from fastapi import Depends, HTTPException
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import Cookie, HTTPException
 from jose import JWTError, jwt
+
 from security import SECRET_KEY, ALGORITHM
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
+def get_current_user(access_token: str = Cookie(default=None)):
 
-def get_current_user(token: str = Depends(oauth2_scheme)):
-    print("TOKEN RECEIVED:", token)
+    if access_token is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Not Authenticated"
+        )
+
+    print("COOKIE TOKEN:", access_token)
 
     try:
         payload = jwt.decode(
-            token,
+            access_token,
             SECRET_KEY,
             algorithms=[ALGORITHM]
         )
@@ -32,8 +37,9 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
             "role": role
         }
 
-    except Exception as e:
+    except JWTError as e:
         print("JWT ERROR:", str(e))
+
         raise HTTPException(
             status_code=401,
             detail="Invalid Token"
