@@ -26,73 +26,95 @@ def get_db():
         db.close()
 
 
-# ==========================
-# User APIs
-# ==========================
+# ====================================================
+#                 USER APIs
+# ====================================================
 
-@app.post("/register_user")
-def register_user(
-    user: schemas.UserCreate,
-    db: Session = Depends(get_db)
+@app.post("/register", tags=["Authentication"])
+def register(
+        user: schemas.UserCreate,
+        db: Session = Depends(get_db)
 ):
+
     return crud.create_user(user, db)
 
 
-@app.post("/login")
+@app.post("/login", tags=["Authentication"])
 def login(
-    response: Response,
-    user: schemas.UserLogin,
-    db: Session = Depends(get_db)
+        response: Response,
+        user: schemas.UserLogin,
+        db: Session = Depends(get_db)
 ):
-    return crud.login_user(user, db, response)
+
+    return crud.login_user(
+        user,
+        db,
+        response
+    )
 
 
-# ==========================
-# Mobile APIs
-# ==========================
+# ====================================================
+#               MOBILE CRUD APIs
+# ====================================================
 
-# Create Mobile
-@app.post("/mobiles", response_model=schemas.MobileResponse)
+@app.post(
+    "/mobiles",
+    response_model=schemas.MobileResponse,
+    tags=["Mobiles"]
+)
 def create_mobile(
-    mobile: schemas.MobileCreate,
-    db: Session = Depends(get_db)
+        mobile: schemas.MobileCreate,
+        db: Session = Depends(get_db)
 ):
+
     return crud.create_mobile(db, mobile)
 
 
-# Get All Mobiles (Admin Only)
-@app.get("/mobiles", response_model=list[schemas.MobileResponse])
+@app.get(
+    "/mobiles",
+    response_model=list[schemas.MobileResponse],
+    tags=["Mobiles"]
+)
 def get_all_mobiles(
-    db: Session = Depends(get_db),
-    user=Depends(verify_admin)
+        db: Session = Depends(get_db),
+        admin=Depends(verify_admin)
 ):
+
     return crud.get_mobiles(db)
 
 
-# Get Mobile By ID
-@app.get("/mobiles/{mobile_id}", response_model=schemas.MobileResponse)
+@app.get(
+    "/mobiles/{mobile_id}",
+    response_model=schemas.MobileResponse,
+    tags=["Mobiles"]
+)
 def get_mobile(
-    mobile_id: int,
-    db: Session = Depends(get_db)
+        mobile_id: int,
+        db: Session = Depends(get_db)
 ):
+
     mobile = crud.get_mobile(db, mobile_id)
 
     if not mobile:
         raise HTTPException(
             status_code=404,
-            detail="Mobile not found"
+            detail="Mobile Not Found"
         )
 
     return mobile
 
 
-# Update Mobile
-@app.put("/mobiles/{mobile_id}", response_model=schemas.MobileResponse)
+@app.put(
+    "/mobiles/{mobile_id}",
+    response_model=schemas.MobileResponse,
+    tags=["Mobiles"]
+)
 def update_mobile(
-    mobile_id: int,
-    mobile: schemas.MobileCreate,
-    db: Session = Depends(get_db)
+        mobile_id: int,
+        mobile: schemas.MobileCreate,
+        db: Session = Depends(get_db)
 ):
+
     updated = crud.update_mobile(
         db,
         mobile_id,
@@ -102,18 +124,21 @@ def update_mobile(
     if not updated:
         raise HTTPException(
             status_code=404,
-            detail="Mobile not found"
+            detail="Mobile Not Found"
         )
 
     return updated
 
 
-# Delete Mobile
-@app.delete("/mobiles/{mobile_id}")
+@app.delete(
+    "/mobiles/{mobile_id}",
+    tags=["Mobiles"]
+)
 def delete_mobile(
-    mobile_id: int,
-    db: Session = Depends(get_db)
+        mobile_id: int,
+        db: Session = Depends(get_db)
 ):
+
     deleted = crud.delete_mobile(
         db,
         mobile_id
@@ -122,21 +147,25 @@ def delete_mobile(
     if not deleted:
         raise HTTPException(
             status_code=404,
-            detail="Mobile not found"
+            detail="Mobile Not Found"
         )
 
     return {
-        "message": "Mobile deleted successfully"
+        "message": "Mobile Deleted Successfully"
     }
 
 
-# Search Mobile By Brand
-@app.get("/brand/{brand}")
-def get_brand(
-    brand: str,
-    db: Session = Depends(get_db)
+@app.get(
+    "/brand/{brand}",
+    response_model=list[schemas.MobileResponse],
+    tags=["Mobiles"]
+)
+def search_brand(
+        brand: str,
+        db: Session = Depends(get_db)
 ):
-    return crud.get_mobile_by_brand(
+
+    return crud.search_brand(
         db,
         brand
     )

@@ -1,13 +1,11 @@
 from pydantic import BaseModel
 
 
-# -------------------------
-# Mobile Schemas
-# -------------------------
+# ---------------- Mobile ----------------
 
 class MobileCreate(BaseModel):
     brand: str
-    color: str
+    model: str
     price: float
     ram: str
     storage: str
@@ -21,9 +19,7 @@ class MobileResponse(MobileCreate):
     }
 
 
-# -------------------------
-# User Schemas
-# -------------------------
+# ---------------- User ----------------
 
 class UserCreate(BaseModel):
     name: str
