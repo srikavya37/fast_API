@@ -1,20 +1,18 @@
 from sqlalchemy.orm import Session
+from fastapi import Response, HTTPException
 import models
 import schemas
 import bcrypt
 import jwt
-
 from datetime import datetime, timedelta
-from fastapi import Response
-from fastapi import HTTPException
 
 SECRET_KEY = "abcdefghijklmnopqrstuvwxyz"
 ALGORITHM = "HS256"
 
 
-# ===========================
+# ==========================
 # Mobile CRUD
-# ===========================
+# ==========================
 
 def create_mobile(db: Session, mobile: schemas.MobileCreate):
     db_mobile = models.Mobile(**mobile.model_dump())
@@ -36,11 +34,7 @@ def get_mobile(db: Session, mobile_id: int):
     ).first()
 
 
-def update_mobile(
-        db: Session,
-        mobile_id: int,
-        mobile: schemas.MobileCreate
-):
+def update_mobile(db: Session, mobile_id: int, mobile: schemas.MobileCreate):
 
     db_mobile = get_mobile(db, mobile_id)
 
@@ -72,18 +66,20 @@ def delete_mobile(db: Session, mobile_id: int):
     return db_mobile
 
 
-def search_brand(db: Session, brand: str):
+def get_mobile_by_brand(db: Session, brand: str):
+
     return db.query(models.Mobile).filter(
         models.Mobile.brand == brand
     ).all()
 
 
-# ===========================
+# ==========================
 # User Registration
-# ===========================
+# ==========================
 
 def create_user(user: schemas.UserCreate, db: Session):
 
+    # Check if email already exists
     existing_user = db.query(models.Users).filter(
         models.Users.email == user.email
     ).first()
@@ -99,7 +95,7 @@ def create_user(user: schemas.UserCreate, db: Session):
     hashed = bcrypt.hashpw(
         new_user.password.encode(),
         bcrypt.gensalt(rounds=12)
-    ).decode()
+    ).decode("utf-8")
 
     new_user.password = hashed
 
@@ -110,14 +106,14 @@ def create_user(user: schemas.UserCreate, db: Session):
     return new_user
 
 
-# ===========================
-# Login
-# ===========================
+# ==========================
+# User Login
+# ==========================
 
 def login_user(
-        user: schemas.UserLogin,
-        db: Session,
-        response: Response
+    user: schemas.UserLogin,
+    db: Session,
+    response: Response
 ):
 
     is_exists = db.query(models.Users).filter(
@@ -125,9 +121,10 @@ def login_user(
     ).first()
 
     if not is_exists:
-        return {
-            "message": "User Not Found"
-        }
+        raise HTTPException(
+            status_code=404,
+            detail="User not found"
+        )
 
     valid = bcrypt.checkpw(
         user.password.encode(),
@@ -135,15 +132,17 @@ def login_user(
     )
 
     if not valid:
-        return {
-            "message": "Invalid Password"
-        }
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid password"
+        )
 
     payload = {
         "name": is_exists.name,
         "email": is_exists.email,
         "is_admin": is_exists.is_admin,
-        "exp": datetime.utcnow() + timedelta(hours=1)
+        "is_loggedin": True,
+        "exp": datetime.utcnow() + timedelta(seconds=1000)
     }
 
     token = jwt.encode(
@@ -155,7 +154,8 @@ def login_user(
     response.set_cookie(
         key="access_token",
         value=token,
-        httponly=True
+        httponly=True,
+        samesite="lax"
     )
 
     return {
