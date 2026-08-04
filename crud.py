@@ -6,6 +6,7 @@ import jwt
 
 from datetime import datetime, timedelta
 from fastapi import Response
+from fastapi import HTTPException
 
 SECRET_KEY = "abcdefghijklmnopqrstuvwxyz"
 ALGORITHM = "HS256"
@@ -82,6 +83,16 @@ def search_brand(db: Session, brand: str):
 # ===========================
 
 def create_user(user: schemas.UserCreate, db: Session):
+
+    existing_user = db.query(models.Users).filter(
+        models.Users.email == user.email
+    ).first()
+
+    if existing_user:
+        raise HTTPException(
+            status_code=400,
+            detail="Email already registered"
+        )
 
     new_user = models.Users(**user.model_dump())
 
