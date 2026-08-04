@@ -1,45 +1,22 @@
-from fastapi import Cookie, HTTPException
-from jose import JWTError, jwt
-
-from security import SECRET_KEY, ALGORITHM
+from fastapi import Request, HTTPException
+from security import verify_token
 
 
-def get_current_user(access_token: str = Cookie(default=None)):
+def get_current_user(request: Request):
 
-    if access_token is None:
+    token = request.cookies.get("access_token")
+
+    if not token:
         raise HTTPException(
             status_code=401,
-            detail="Not Authenticated"
+            detail="Not authenticated"
         )
-
-    print("COOKIE TOKEN:", access_token)
 
     try:
-        payload = jwt.decode(
-            access_token,
-            SECRET_KEY,
-            algorithms=[ALGORITHM]
-        )
+        payload = verify_token(token)
+        return payload
 
-        print("PAYLOAD:", payload)
-
-        username = payload.get("sub")
-        role = payload.get("role")
-
-        if username is None:
-            raise HTTPException(
-                status_code=401,
-                detail="Invalid Token"
-            )
-
-        return {
-            "username": username,
-            "role": role
-        }
-
-    except JWTError as e:
-        print("JWT ERROR:", str(e))
-
+    except Exception:
         raise HTTPException(
             status_code=401,
             detail="Invalid Token"

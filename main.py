@@ -1,18 +1,22 @@
-from fastapi import FastAPI, Depends, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 
 import crud
 import schemas
-import auth
 
 from database import Base, engine, SessionLocal
-from dependencies import get_current_user
+from auth import verify_admin
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI()
+app = FastAPI(
+    title="Mobile Management API"
+)
 
+
+# ==========================
+# Database Dependency
+# ==========================
 
 def get_db():
     db = SessionLocal()
@@ -22,82 +26,55 @@ def get_db():
         db.close()
 
 
-# -------------------------
-# Authentication APIs
-# -------------------------
+# ==========================
+# User APIs
+# ==========================
 
-@app.post("/register", response_model=schemas.UserResponse)
-def register(
+@app.post("/register_user")
+def register_user(
     user: schemas.UserCreate,
     db: Session = Depends(get_db)
 ):
-    return auth.register(db, user)
+    return crud.create_user(user, db)
 
 
 @app.post("/login")
 def login(
+    response: Response,
     user: schemas.UserLogin,
     db: Session = Depends(get_db)
 ):
-
-    token = auth.login(
-        db,
-        user.username,
-        user.password
-    )
-
-    if not token:
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid Credentials"
-        )
-
-    response = JSONResponse(
-        content={
-            "message": "Login Successful"
-        }
-    )
-
-    response.set_cookie(
-        key="access_token",
-        value=token,
-        httponly=True,
-        max_age=3600,
-        secure=False,      # Change to True when using HTTPS in production
-        samesite="Lax"
-    )
-
-    return response
+    return crud.login_user(user, db, response)
 
 
-# -------------------------
-# Mobile APIs (Protected)
-# -------------------------
+# ==========================
+# Mobile APIs
+# ==========================
 
+# Create Mobile
 @app.post("/mobiles", response_model=schemas.MobileResponse)
-def create(
+def create_mobile(
     mobile: schemas.MobileCreate,
-    db: Session = Depends(get_db),
-    user=Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
     return crud.create_mobile(db, mobile)
 
 
+# Get All Mobiles (Admin Only)
 @app.get("/mobiles", response_model=list[schemas.MobileResponse])
-def read_all(
+def get_all_mobiles(
     db: Session = Depends(get_db),
-    user=Depends(get_current_user)
+    user=Depends(verify_admin)
 ):
     return crud.get_mobiles(db)
 
 
+# Get Mobile By ID
 @app.get("/mobiles/{mobile_id}", response_model=schemas.MobileResponse)
-def read_one(
+def get_mobile(
     mobile_id: int,
-    db: Session = Depends(get_db),
-    user=Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
-
     mobile = crud.get_mobile(db, mobile_id)
 
     if not mobile:
@@ -109,15 +86,18 @@ def read_one(
     return mobile
 
 
+# Update Mobile
 @app.put("/mobiles/{mobile_id}", response_model=schemas.MobileResponse)
-def update(
+def update_mobile(
     mobile_id: int,
     mobile: schemas.MobileCreate,
-    db: Session = Depends(get_db),
-    user=Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
-
-    updated = crud.update_mobile(db, mobile_id, mobile)
+    updated = crud.update_mobile(
+        db,
+        mobile_id,
+        mobile
+    )
 
     if not updated:
         raise HTTPException(
@@ -128,20 +108,16 @@ def update(
     return updated
 
 
+# Delete Mobile
 @app.delete("/mobiles/{mobile_id}")
-def delete(
+def delete_mobile(
     mobile_id: int,
-    db: Session = Depends(get_db),
-    user=Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
-
-    if user["role"] != "admin":
-        raise HTTPException(
-            status_code=403,
-            detail="Only admin can delete mobiles"
-        )
-
-    deleted = crud.delete_mobile(db, mobile_id)
+    deleted = crud.delete_mobile(
+        db,
+        mobile_id
+    )
 
     if not deleted:
         raise HTTPException(
@@ -154,10 +130,13 @@ def delete(
     }
 
 
+# Search Mobile By Brand
 @app.get("/brand/{brand}")
-def get_brand_mobiles(
+def get_brand(
     brand: str,
-    db: Session = Depends(get_db),
-    user=Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
-    return crud.get_mobile_by_brand(db, brand)
+    return crud.get_mobile_by_brand(
+        db,
+        brand
+    )

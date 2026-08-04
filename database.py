@@ -7,10 +7,15 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 load_dotenv()
 
 #DATABASE_URL = "mysql+pymysql://root:root@localhost:3306/mobiles_db"
+
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-print("DATABASE_URL =", DATABASE_URL)
-engine = create_engine(DATABASE_URL)
+engine = create_engine(
+    DATABASE_URL,
+    connect_args={
+        "ssl": {}
+    }
+)
 
 SessionLocal = sessionmaker(
     autocommit=False,

@@ -1,25 +1,24 @@
-#security
-from passlib.context import CryptContext
-from jose import jwt
 from datetime import datetime, timedelta
+import jwt
+import bcrypt
 
-SECRET_KEY = "mysecretkey123"
+SECRET_KEY = "abcdefghijklmnopqrstuvwxyz"
 ALGORITHM = "HS256"
-
 ACCESS_TOKEN_EXPIRE_MINUTES = 100
 
-pwd_context = CryptContext(
-    schemes=["bcrypt"],
-    deprecated="auto"
-)
+
+def hash_password(password: str):
+    return bcrypt.hashpw(
+        password.encode(),
+        bcrypt.gensalt(rounds=12)
+    ).decode()
 
 
-def hash_password(password):
-    return pwd_context.hash(password)
-
-
-def verify_password(plain, hashed):
-    return pwd_context.verify(plain, hashed)
+def verify_password(plain_password: str, hashed_password: str):
+    return bcrypt.checkpw(
+        plain_password.encode(),
+        hashed_password.encode()
+    )
 
 
 def create_access_token(data: dict):
@@ -32,8 +31,21 @@ def create_access_token(data: dict):
 
     to_encode.update({"exp": expire})
 
-    return jwt.encode(
+    token = jwt.encode(
         to_encode,
         SECRET_KEY,
         algorithm=ALGORITHM
     )
+
+    return token
+
+
+def verify_token(token: str):
+
+    payload = jwt.decode(
+        token,
+        SECRET_KEY,
+        algorithms=[ALGORITHM]
+    )
+
+    return payload
