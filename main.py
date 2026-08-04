@@ -14,9 +14,9 @@ app = FastAPI(
 )
 
 
-# ==========================
+# ======================================
 # Database Dependency
-# ==========================
+# ======================================
 
 def get_db():
     db = SessionLocal()
@@ -26,26 +26,24 @@ def get_db():
         db.close()
 
 
-# ====================================================
-#                 USER APIs
-# ====================================================
+# ======================================
+# Authentication APIs
+# ======================================
 
-@app.post("/register", tags=["Authentication"])
+@app.post("/register")
 def register(
-        user: schemas.UserCreate,
-        db: Session = Depends(get_db)
+    user: schemas.UserCreate,
+    db: Session = Depends(get_db)
 ):
-
     return crud.create_user(user, db)
 
 
-@app.post("/login", tags=["Authentication"])
+@app.post("/login")
 def login(
-        response: Response,
-        user: schemas.UserLogin,
-        db: Session = Depends(get_db)
+    response: Response,
+    user: schemas.UserLogin,
+    db: Session = Depends(get_db)
 ):
-
     return crud.login_user(
         user,
         db,
@@ -53,52 +51,55 @@ def login(
     )
 
 
-# ====================================================
-#               MOBILE CRUD APIs
-# ====================================================
+# ======================================
+# Mobile CRUD APIs
+# ======================================
 
 @app.post(
     "/mobiles",
-    response_model=schemas.MobileResponse,
-    tags=["Mobiles"]
+    response_model=schemas.MobileResponse
 )
 def create_mobile(
-        mobile: schemas.MobileCreate,
-        db: Session = Depends(get_db)
+    mobile: schemas.MobileCreate,
+    db: Session = Depends(get_db),
+    admin=Depends(verify_admin)
 ):
-
-    return crud.create_mobile(db, mobile)
+    return crud.create_mobile(
+        db,
+        mobile
+    )
 
 
 @app.get(
     "/mobiles",
-    response_model=list[schemas.MobileResponse],
-    tags=["Mobiles"]
+    response_model=list[schemas.MobileResponse]
 )
-def get_all_mobiles(
-        db: Session = Depends(get_db),
-        admin=Depends(verify_admin)
+def read_all_mobiles(
+    db: Session = Depends(get_db),
+    admin=Depends(verify_admin)
 ):
-
     return crud.get_mobiles(db)
 
 
 @app.get(
     "/mobiles/{mobile_id}",
-    response_model=schemas.MobileResponse,
-    tags=["Mobiles"]
+    response_model=schemas.MobileResponse
 )
-def get_mobile(
-        mobile_id: int,
-        db: Session = Depends(get_db)
+def read_mobile(
+    mobile_id: int,
+    db: Session = Depends(get_db),
+    admin=Depends(verify_admin)
 ):
 
-    mobile = crud.get_mobile(db, mobile_id)
+    mobile = crud.get_mobile(
+        db,
+        mobile_id
+    )
 
     if not mobile:
         raise HTTPException(
             status_code=404,
-            detail="Mobile Not Found"
+            detail="Mobile not found"
         )
 
     return mobile
@@ -106,13 +107,13 @@ def get_mobile(
 
 @app.put(
     "/mobiles/{mobile_id}",
-    response_model=schemas.MobileResponse,
-    tags=["Mobiles"]
+    response_model=schemas.MobileResponse
 )
 def update_mobile(
-        mobile_id: int,
-        mobile: schemas.MobileCreate,
-        db: Session = Depends(get_db)
+    mobile_id: int,
+    mobile: schemas.MobileCreate,
+    db: Session = Depends(get_db),
+    admin=Depends(verify_admin)
 ):
 
     updated = crud.update_mobile(
@@ -124,19 +125,17 @@ def update_mobile(
     if not updated:
         raise HTTPException(
             status_code=404,
-            detail="Mobile Not Found"
+            detail="Mobile not found"
         )
 
     return updated
 
 
-@app.delete(
-    "/mobiles/{mobile_id}",
-    tags=["Mobiles"]
-)
+@app.delete("/mobiles/{mobile_id}")
 def delete_mobile(
-        mobile_id: int,
-        db: Session = Depends(get_db)
+    mobile_id: int,
+    db: Session = Depends(get_db),
+    admin=Depends(verify_admin)
 ):
 
     deleted = crud.delete_mobile(
@@ -147,25 +146,29 @@ def delete_mobile(
     if not deleted:
         raise HTTPException(
             status_code=404,
-            detail="Mobile Not Found"
+            detail="Mobile not found"
         )
 
     return {
-        "message": "Mobile Deleted Successfully"
+        "message": "Mobile deleted successfully"
     }
 
 
+# ======================================
+# Search Mobile by Brand
+# ======================================
+
 @app.get(
     "/brand/{brand}",
-    response_model=list[schemas.MobileResponse],
-    tags=["Mobiles"]
+    response_model=list[schemas.MobileResponse]
 )
-def search_brand(
-        brand: str,
-        db: Session = Depends(get_db)
+def search_mobile(
+    brand: str,
+    db: Session = Depends(get_db),
+    admin=Depends(verify_admin)
 ):
 
-    return crud.search_brand(
+    return crud.get_mobile_by_brand(
         db,
         brand
     )

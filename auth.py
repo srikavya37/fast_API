@@ -34,11 +34,11 @@ def verify_admin(request: Request):
     except jwt.ExpiredSignatureError:
         raise HTTPException(
             status_code=401,
-            detail="Token Expired"
+            detail="Token expired"
         )
 
     except jwt.InvalidTokenError:
         raise HTTPException(
             status_code=401,
-            detail="Invalid Token"
+            detail="Invalid token"
         )

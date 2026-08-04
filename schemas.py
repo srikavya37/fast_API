@@ -1,7 +1,9 @@
 from pydantic import BaseModel
 
 
-# ---------------- Mobile ----------------
+# ==================================
+# Mobile Schemas
+# ==================================
 
 class MobileCreate(BaseModel):
     brand: str
@@ -19,7 +21,9 @@ class MobileResponse(MobileCreate):
     }
 
 
-# ---------------- User ----------------
+# ==================================
+# User Schemas
+# ==================================
 
 class UserCreate(BaseModel):
     name: str
@@ -27,8 +31,12 @@ class UserCreate(BaseModel):
     password: str
 
 
-class UserResponse(UserCreate):
+class UserResponse(BaseModel):
     id: int
+    name: str
+    email: str
+    is_admin: bool
+    is_active: bool
 
     model_config = {
         "from_attributes": True
